@@ -81,10 +81,9 @@ class PasswordHasherUnified:
             hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=self.rounds))
             return hashed.decode('utf-8')
         elif self.method == "scrypt":
-            password_bytes = password.encode('utf-8')
             salt = os.urandom(self.salt_size)
             # 生成哈希
-            hash_bytes = scrypt.hash(password_bytes, salt, N=self.N, r=self.r, p=self.p)
+            hash_bytes = scrypt.hash(password.encode('utf-8'), salt, N=self.N, r=self.r, p=self.p)
             salt_b64 = base64.urlsafe_b64encode(salt).decode('ascii')
             hash_b64 = base64.urlsafe_b64encode(hash_bytes).decode('ascii')
             # 存储格式：$scrypt$N=16384,r=8,p=1$盐$哈希
@@ -109,16 +108,10 @@ class PasswordHasherUnified:
                 for param in params_str.split(','):
                     key, value = param.split('=')
                     params[key] = int(value)
-
-                N = params['N']
-                r = params['r']
-                p = params['p']
                 # 解码盐和哈希
                 salt = base64.urlsafe_b64decode(parts[3])
                 stored_hash = base64.urlsafe_b64decode(parts[4])
-                # 计算新哈希
-                password_bytes = password.encode('utf-8')
-                new_hash = scrypt.hash(password_bytes, salt, N=N, r=r, p=p)
+                new_hash = scrypt.hash(password.encode('utf-8'), salt, N=params['N'], r=params['r'], p=params['p'])
                 # 使用 hmac.compare_digest 进行恒定时间比较
                 return hmac.compare_digest(stored_hash, new_hash)
             else:
