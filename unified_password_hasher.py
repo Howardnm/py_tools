@@ -1,14 +1,45 @@
-import base64
-import hmac
-import os
+import base64                       # 用于编码和解码盐和哈希
+import hmac                         # 用于恒定时间比较
+import os                           # 用于生成随机盐
 
-import bcrypt
-import scrypt
-from argon2 import PasswordHasher
+import bcrypt                       # bcrypt 库 pip install bcrypt
+import scrypt                       # scrypt 库 pip install scrypt
+from argon2 import PasswordHasher   # argon2 库 pip install argon2-cffi
 
+'''
+统一密码哈希类，支持 Argon2、bcrypt 和 scrypt 三种算法。
+使用示例：
+ph = PasswordHasherUnified(method="argon2")
+hash_str = ph.hash("my_password")
+is_valid = ph.verify(hash_str, "my_password")
 
-# 安装依赖:
-# pip install bcrypt scrypt argon2-cffi
+方法说明：
+- hash(password: str) -> str
+    生成哈希字符串（自动生成随机盐）
+- verify(hash_str: str, password: str) -> bool
+    验证密码是否正确（自动识别算法）
+    
+参数说明：
+- method: 'argon2' | 'bcrypt' | 'scrypt'（默认 argon2）
+- kwargs: 各算法的可调参数
+    Argon2 参数：
+        time_cost: 时间成本（迭代次数）
+        memory_cost: 内存成本 (KB)
+        parallelism: 并行度
+        hash_len: 哈希长度 (字节)
+        salt_len: 盐长度 (字节)
+    bcrypt 参数：
+        rounds: CPU成本，默认12轮
+    scrypt 参数：
+        N: CPU/内存成本参数
+        r: 块大小参数
+        p: 并行度参数
+        salt_size: 盐长度 (字节)
+        
+注意事项：
+- bcrypt 仅支持最多72字节的密码，超过部分将被忽略。
+'''
+
 
 class PasswordHasherUnified:
     def __init__(self, method="argon2", **kwargs):
